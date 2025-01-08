@@ -68,7 +68,8 @@ epochs = 50
 lr = 0.001
 
 # 数据加载器
-transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+#transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
+transform = transforms.Compose([transforms.ToTensor()])  # 只做 ToTensor 修改数据预处理，去除归一化到 [-1, 1]
 dataset = torchvision.datasets.MNIST(root='./data/mnist/', train=True, transform=transform, download=True)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 

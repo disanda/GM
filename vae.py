@@ -78,7 +78,7 @@ lr = 0.0005
 # 数据加载器
 #transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 transform = transforms.Compose([transforms.ToTensor()])  # 只做 ToTensor 修改数据预处理，去除归一化到 [-1, 1]
-dataset = torchvision.datasets.MNIST(root='./data/mnist/', train=True, transform=transform)
+dataset = torchvision.datasets.MNIST(root='./data/mnist/', train=True, transform=transform, download=True)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 vae = VAE(input_dim=input_dim, latent_dim=latent_dim).to(device)

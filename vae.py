@@ -99,19 +99,21 @@ for epoch in range(epochs):
 
     print(f"Epoch [{epoch+1}/{epochs}] Loss: {total_loss / len(dataloader.dataset):.4f}")
 
-vae.eval()
-with torch.no_grad():
-    # 从标准正态分布采样
-    z = torch.randn(16*16, latent_dim).to(device)  # 16x16 = 256 个样本
-    generated_images = vae.decoder(z).view(-1, 1, 32, 32).cpu()
+    if epoch%10 ==0:
+        vae.eval()
+        with torch.no_grad():
+            # 从标准正态分布采样
+            z = torch.randn(16*16, latent_dim).to(device)  # 16x16 = 256 个样本
+            generated_images = vae.decoder(z).view(-1, 1, 32, 32).cpu()
 
-    # 创建 16x16 的网格
-    grid = torchvision.utils.make_grid(generated_images, nrow=16, normalize=True)
+            # 创建 16x16 的网格
+            grid = torchvision.utils.make_grid(generated_images, nrow=16, normalize=True)
 
-    # 保存生成的图像为文件
-    torchvision.utils.save_image(grid, 'generated_images.png', normalize=True)
+            # 保存生成的图像为文件
+            torchvision.utils.save_image(grid, './results/generated_images.png', normalize=True)
 
-    # 显示图像
-    plt.imshow(grid.permute(1, 2, 0))
-    plt.axis('off')  # 去除坐标轴
-    plt.show()
+            # 显示图像
+            plt.imshow(grid.permute(1, 2, 0))
+            plt.axis('off')  # 去除坐标轴
+            plt.show()
+

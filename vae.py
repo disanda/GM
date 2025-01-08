@@ -6,6 +6,9 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
+# 设置设备为 GPU id:0
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 class VAE(nn.Module):
     def __init__(self, input_dim, latent_dim):
         super(VAE, self).__init__()
@@ -69,7 +72,7 @@ transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5
 dataset = torchvision.datasets.MNIST(root='./data/mnist/', train=True, transform=transform, download=True)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-vae = VAE(input_dim=input_dim, latent_dim=latent_dim).to('cuda')
+vae = VAE(input_dim=input_dim, latent_dim=latent_dim).to(device)
 optimizer = optim.Adam(vae.parameters(), lr=lr)
 
 for epoch in range(epochs):
@@ -78,7 +81,7 @@ for epoch in range(epochs):
 
     for images, _ in dataloader:
         # 预处理数据
-        images = images.view(-1, input_dim).to('cuda')
+        images = images.view(-1, input_dim).to(device)
 
         # 前向传播
         recon_images, mu, logvar = vae(images)
@@ -98,7 +101,7 @@ for epoch in range(epochs):
 vae.eval()
 with torch.no_grad():
     # 从标准正态分布采样
-    z = torch.randn(16*16, latent_dim).to('cuda')  # 16x16 = 256 个样本
+    z = torch.randn(16*16, latent_dim).to(device)  # 16x16 = 256 个样本
     generated_images = vae.decoder(z).view(-1, 1, 32, 32).cpu()
 
     # 创建 16x16 的网格

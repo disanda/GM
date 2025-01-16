@@ -13,7 +13,7 @@ transform = transforms.Compose([
 ])
 
 # 加载数据集
-os.makedirs("results", exist_ok=True) # 确保 results 文件夹存在
+os.makedirs("gan_results", exist_ok=True) # 确保 results 文件夹存在
 train_dataset = torchvision.datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
 
 # 超参数
@@ -152,7 +152,7 @@ for epoch in range(num_epochs):
                 ax.axis('off')  # 隐藏坐标轴
             
             # 保存图像到 results 文件夹
-            save_path = f"./results/epoch_{epoch + 1}.png"
+            save_path = f"./gan_results/epoch_{epoch + 1}.png"
             plt.subplots_adjust(wspace=0, hspace=0)  # 去掉子图间距
             plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
             plt.close(fig)  # 关闭图像以释放内存

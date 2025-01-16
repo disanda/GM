@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 
-
 # 数据预处理
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -14,8 +13,8 @@ transform = transforms.Compose([
 ])
 
 # 加载数据集
+os.makedirs("results", exist_ok=True) # 确保 results 文件夹存在
 train_dataset = torchvision.datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform)
-
 
 # 超参数
 noise_dim = 100
@@ -138,3 +137,22 @@ for epoch in range(num_epochs):
                 ax.imshow(img.squeeze(), cmap='gray')
                 ax.axis('off')
             plt.show()
+
+    # 每 10 个 epoch 保存生成图像
+    if (epoch + 1) % 10 == 0:
+        with torch.no_grad():
+            z = torch.randn(256, noise_dim).to(device)  # 16x16 的生成图像数量
+            samples = generator(z).cpu().numpy()
+            samples = (samples + 1) / 2  # 转换回 [0, 1] 范围
+            
+            # 创建一个16x16的子图
+            fig, axs = plt.subplots(16, 16, figsize=(16, 16))
+            for ax, img in zip(axs.flatten(), samples):
+                ax.imshow(img.squeeze(), cmap='gray')  # 绘制灰度图
+                ax.axis('off')  # 隐藏坐标轴
+            
+            # 保存图像到 results 文件夹
+            save_path = f"./results/epoch_{epoch + 1}.png"
+            plt.subplots_adjust(wspace=0, hspace=0)  # 去掉子图间距
+            plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+            plt.close(fig)  # 关闭图像以释放内存

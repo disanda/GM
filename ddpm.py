@@ -63,7 +63,7 @@ class DDPM(nn.Module):
         self.timesteps = timesteps
 
         # 预计算噪声
-        self.beta = torch.linspace(1e-4, 0.02, timesteps)  # 可调的beta
+        self.beta = torch.linspace(1e-4, 0.02, timesteps).to(device)  # 可调的beta
         self.alpha = 1 - self.beta
         self.alpha_cumprod = torch.cumprod(self.alpha, dim=0)
 

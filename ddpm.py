@@ -1,5 +1,7 @@
 import torch
 import torchvision
+import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
@@ -23,8 +25,8 @@ trainloader = DataLoader(trainset, batch_size=64, shuffle=True)
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 testloader = DataLoader(testset, batch_size=64, shuffle=False)
 
-import torch.nn as nn
-import torch.nn.functional as F
+os.environ['CUDA_VISIBLE_DEVICES'] = '1' # 设置GPU id 默认为0 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class UNet(nn.Module):
     def __init__(self, in_channels=3, out_channels=3, channels=64):
@@ -69,8 +71,8 @@ class DDPM(nn.Module):
         """
         通过正向扩散过程添加噪声
         """
-        noise = torch.randn_like(x_0)
-        alpha_cumprod_t = self.alpha_cumprod[t].view(-1, 1, 1, 1)
+        noise = torch.randn_like(x_0).to(device)
+        alpha_cumprod_t = self.alpha_cumprod[t].view(-1, 1, 1, 1).to(device)
         return torch.sqrt(alpha_cumprod_t) * x_0 + torch.sqrt(1 - alpha_cumprod_t) * noise
 
     def reverse_process(self, x_t, t):
@@ -81,7 +83,7 @@ class DDPM(nn.Module):
         return model_out
 
 # 创建DDPM实例
-model = UNet()
+model = UNet().to(device)
 ddpm = DDPM(model)
 
 # 选择优化器
@@ -92,7 +94,7 @@ def train(ddpm, trainloader, optimizer, epochs=10):
     for epoch in range(epochs):
         running_loss = 0.0
         for i, (images, _) in enumerate(trainloader):
-            images = images.cuda()
+            images = images.to(device)
 
             # 随机选择时间步t
             t = torch.randint(0, ddpm.timesteps, (images.size(0),), device=images.device)

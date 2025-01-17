@@ -72,7 +72,7 @@ class DDPM(nn.Module):
         通过正向扩散过程添加噪声
         """
         noise = torch.randn_like(x_0).to(device)
-        alpha_cumprod_t = self.alpha_cumprod[t].view(-1, 1, 1, 1).to(device)
+        alpha_cumprod_t = self.alpha_cumprod[t].view(-1, 1, 1, 1)
         return torch.sqrt(alpha_cumprod_t) * x_0 + torch.sqrt(1 - alpha_cumprod_t) * noise
 
     def reverse_process(self, x_t, t):
@@ -84,7 +84,7 @@ class DDPM(nn.Module):
 
 # 创建DDPM实例
 model = UNet().to(device)
-ddpm = DDPM(model)
+ddpm = DDPM(model).to(device)
 
 # 选择优化器
 optimizer = optim.Adam(ddpm.parameters(), lr=1e-4)

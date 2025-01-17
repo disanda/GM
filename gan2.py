@@ -20,7 +20,7 @@ lr = 0.0002
 num_epochs = 50
 data_dim = 28*28
 batch_size = 128
-os.makedirs("gan_results", exist_ok=True) # 确保 results 文件夹存在
+os.makedirs("gan_results3-convDG", exist_ok=True) # 确保 results 文件夹存在
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '1' # 设置GPU id 默认为0 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -31,26 +31,62 @@ train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 # 生成器
 class Generator(nn.Module):
-    def __init__(self, latent_dim):
-        super(Generator, self).__init__()
+    def __init__(self, latent_dim, feature_dim=latent_dim):
+        super().__init__()
         self.model = nn.Sequential(
-            nn.Linear(latent_dim, 256),
-            nn.ReLU(),
-            nn.Linear(256, 512),
-            nn.ReLU(),
-            nn.Linear(512, 1024),
-            nn.ReLU(),
-            nn.Linear(1024, 28*28),
+            # 输入是 latent_dim x 1 x 1，输出是 feature_dim*8 x 4 x 4
+            nn.ConvTranspose2d(latent_dim, feature_dim * 8, kernel_size=3, stride=1, padding=0, bias=False),
+            nn.BatchNorm2d(feature_dim * 8),
+            nn.ReLU(True),
+            
+            # feature_dim*8 x 4 x 4 -> feature_dim*4 x 8 x 8
+            nn.ConvTranspose2d(feature_dim * 8, feature_dim * 4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(feature_dim * 4),
+            nn.ReLU(True),
+            
+            # feature_dim*4 x 8 x 8 -> feature_dim*2 x 14 x 14
+            nn.ConvTranspose2d(feature_dim * 4, feature_dim * 2, kernel_size=5, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(feature_dim * 2),
+            nn.ReLU(True),
+            
+            # feature_dim*2 x 16 x 16 -> 1 x 28 x 28
+            nn.ConvTranspose2d(feature_dim * 2, 1, kernel_size=6, stride=2, padding=1, bias=False),
             nn.Tanh()  # 输出范围 [-1, 1]
         )
+
     def forward(self, z):
-        img = self.model(z)
-        return img.view(-1, 1, 28, 28)  # 调整为 1x28x28
+        return self.model(z)
 
 # 判别器
 class Discriminator(nn.Module):
+    def __init__(self, feature_dim=latent_dim):
+        super().__init__()
+        self.model = nn.Sequential(
+            # 输入是 1 x 28 x 28 -> feature_dim x 14 x 14
+            nn.Conv2d(1, feature_dim, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            
+            # feature_dim x 14 x 14 -> feature_dim*2 x 7 x 7
+            nn.Conv2d(feature_dim, feature_dim * 2, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(feature_dim * 2),
+            nn.LeakyReLU(0.2, inplace=True),
+            
+            # feature_dim*2 x 7 x 7 -> feature_dim*4 x 3 x 3
+            nn.Conv2d(feature_dim * 2, feature_dim * 4, kernel_size=4, stride=2, padding=1, bias=False),
+            nn.BatchNorm2d(feature_dim * 4),
+            nn.LeakyReLU(0.2, inplace=True),
+            
+            # feature_dim*4 x 3 x 3 -> 1 (分类概率)
+            nn.Conv2d(feature_dim * 4, 1, kernel_size=3, stride=1, padding=0, bias=False),
+            nn.Sigmoid()
+        )
+
+    def forward(self, img):
+        return self.model(img).view(-1, 1)
+
+class Discriminator2(nn.Module):
     def __init__(self):
-        super(Discriminator, self).__init__()
+        super(Discriminator2, self).__init__()
         self.model = nn.Sequential(
             nn.Linear(28*28, 1024),
             nn.LeakyReLU(0.2),
@@ -71,14 +107,14 @@ class Discriminator(nn.Module):
 
 # 初始化生成器和判别器
 generator = Generator(latent_dim).to(device)
-discriminator = Discriminator().to(device)
+discriminator = Discriminator2().to(device)
 
 # 损失函数
 criterion = nn.BCELoss()
 
 # 优化器
 optimizer_G = optim.Adam(generator.parameters(), lr=lr)
-optimizer_D = optim.Adam(discriminator.parameters(), lr=lr*0.5)
+optimizer_D = optim.Adam(discriminator.parameters(), lr=lr)
 
 # 生成真实数据分布（例如二维正态分布）
 def real_data_sampler(batch_size):
@@ -96,8 +132,12 @@ for epoch in range(num_epochs):
         #  训练判别器
         # ---------------------
         real_imgs = real_imgs.to(device)
-        z = torch.randn(batch_size, latent_dim).to(device)
+        #z = torch.randn(batch_size, latent_dim).to(device)
+        z = torch.randn(batch_size, latent_dim, 1, 1).to(device)
         fake_imgs = generator(z).detach()  # 假图像，不更新生成器
+        # print(fake_imgs.shape)
+        # print(discriminator(real_imgs).shape)
+        # print(fake_labels.shape)
         
         real_loss = criterion(discriminator(real_imgs), real_labels)
         fake_loss = criterion(discriminator(fake_imgs), fake_labels)
@@ -110,7 +150,8 @@ for epoch in range(num_epochs):
         # ---------------------
         #  训练生成器
         # ---------------------
-        z = torch.randn(batch_size, latent_dim).to(device)
+        #z = torch.randn(batch_size, latent_dim).to(device)
+        z = torch.randn(batch_size, latent_dim, 1, 1).to(device)
         fake_imgs = generator(z)
         g_loss = criterion(discriminator(fake_imgs), real_labels)  # 目标是骗过判别器
         
@@ -124,7 +165,8 @@ for epoch in range(num_epochs):
     # 每 3 个 epoch 保存生成图像
     if (epoch + 1) % 3 == 0:
         with torch.no_grad():
-            z = torch.randn(256, latent_dim).to(device)  # 16x16 的生成图像数量
+            #z = torch.randn(256, latent_dim).to(device)  # 16x16 的生成图像数量
+            z = torch.randn(16*16, latent_dim, 1, 1).to(device)
             samples = generator(z).cpu().numpy()
             samples = (samples + 1) / 2  # 转换回 [0, 1] 范围
             
@@ -135,7 +177,7 @@ for epoch in range(num_epochs):
                 ax.axis('off')  # 隐藏坐标轴
             
             # 保存图像到 results 文件夹
-            save_path = f"./gan_results/epoch_{epoch + 1}.png"
+            save_path = f"./gan_results3-convDG/epoch_{epoch + 1}.png"
             plt.subplots_adjust(wspace=0, hspace=0)  # 去掉子图间距
             plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
             plt.close(fig)  # 关闭图像以释放内存

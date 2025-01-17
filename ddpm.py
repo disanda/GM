@@ -97,7 +97,7 @@ def train(ddpm, trainloader, optimizer, epochs=10):
             images = images.to(device)
 
             # 随机选择时间步t
-            t = torch.randint(0, ddpm.timesteps, (images.size(0),), device=images.device)
+            t = torch.randint(0, ddpm.timesteps, (images.size(0),)).to(device)
 
             # 扩散过程
             noisy_images = ddpm.forward(images, t)

@@ -77,7 +77,7 @@ lr = 0.0005
 
 # 数据加载器
 #transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
-transform = transforms.Compose([transforms.ToTensor()])  # 只做 ToTensor 修改数据预处理，去除归一化到 [-1, 1]
+transform = transforms.Compose([transforms.ToTensor()])  # 只做 ToTensor 修改数据预处理，默认[0,1], 去除归一化到 [-1, 1]
 dataset = torchvision.datasets.MNIST(root='./data', train=True, transform=transform, download=True)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 

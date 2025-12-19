@@ -9,13 +9,14 @@ If you find this work helpful for your research, please consider citing our pape
 
 ```bibtex
 @misc{yu2025understandingdiffusionmodelscode,
-      title={Understanding Diffusion Models via Code Execution},
+      title={Understanding Diffusion Models via Code Execution}, 
       author={Cheng Yu},
       year={2025},
       eprint={2512.07201},
       archivePrefix={arXiv},
       primaryClass={cs.CV},
-      url={http
+      url={https://arxiv.org/abs/2512.07201}, 
+}
 ```
 
 
